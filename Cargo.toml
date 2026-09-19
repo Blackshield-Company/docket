@@ -1,0 +1,21 @@
+[package]
+name = "docket"
+version = "0.1.0"
+edition = "2021"
+description = "Local-first case file organizer for public defenders"
+license = "Apache-2.0"
+
+[lib]
+name = "docket"
+path = "src/lib.rs"
+
+[[bin]]
+name = "docket"
+path = "src/main.rs"
+
+[dependencies]
+rusqlite = { version = "0.32", features = ["bundled"] }
+clap = { version = "4", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
+anyhow = "1"
