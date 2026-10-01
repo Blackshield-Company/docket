@@ -9,6 +9,9 @@ use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
+mod pdf;
+pub use pdf::render_pdf;
+
 /// Default database filename, created in the current working directory.
 pub const DB_FILENAME: &str = "docket.db";
 

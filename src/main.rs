@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use chrono::NaiveDate;
 use clap::{Parser, Subcommand};
-use docket::Store;
+use docket::{render_pdf, Store};
 
 #[derive(Parser)]
 #[command(
@@ -54,6 +54,9 @@ enum Command {
         /// Write to this file instead of stdout
         #[arg(long)]
         out: Option<std::path::PathBuf>,
+        /// Write a PDF court summary to this path
+        #[arg(long)]
+        pdf: Option<std::path::PathBuf>,
     },
     /// Local reminder: overdue and due soon. Prints nothing if the board is clear.
     Remind {
@@ -298,14 +301,23 @@ fn main() -> Result<()> {
             let case = store.close_case(&id_or_number)?;
             println!("Closed case #{} ({})", case.id, case.case_number);
         }
-        Command::Export { id_or_number, out } => {
+        Command::Export {
+            id_or_number,
+            out,
+            pdf,
+        } => {
             let summary = store.export_summary(&id_or_number)?;
-            if let Some(path) = out {
-                std::fs::write(&path, &summary)
+            if let Some(path) = &out {
+                std::fs::write(path, &summary)
                     .with_context(|| format!("could not write {}", path.display()))?;
                 println!("Wrote {}", path.display());
-            } else {
+            } else if pdf.is_none() {
                 print!("{summary}");
+            }
+            if let Some(path) = pdf {
+                std::fs::write(&path, render_pdf(&summary))
+                    .with_context(|| format!("could not write {}", path.display()))?;
+                println!("Wrote {}", path.display());
             }
         }
         Command::Remind { days, notify } => {

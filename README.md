@@ -60,6 +60,7 @@ docket close CR-2026-0142
 
 # Court-day summary (stdout, or --out summary.txt)
 docket export CR-2026-0142
+docket export CR-2026-0142 --pdf summary.pdf
 
 # Local reminder. Silent if nothing is due. Safe to cron.
 docket remind                 # overdue + due today
@@ -97,8 +98,8 @@ machine it lives on. Consider full-disk encryption.
 - [x] Rust core library + CLI
 - [x] Export a case summary to plain text for court days
 - [x] Deadline reminders (optional, local only — `docket remind`)
+- [x] PDF export (`docket export --pdf`)
 - [ ] Tauri GUI (same local-first core, no new dependencies on the network)
-- [ ] PDF export
 
 ## License
 
