@@ -57,6 +57,9 @@ docket search "possession"
 
 # Close a case
 docket close CR-2026-0142
+
+# Court-day summary (stdout, or --out summary.txt)
+docket export CR-2026-0142
 ```
 
 ## Pseudonyms and screen sharing
@@ -87,12 +90,13 @@ machine it lives on. Consider full-disk encryption.
 ## Roadmap
 
 - [x] Rust core library + CLI
+- [x] Export a case summary to plain text for court days
 - [ ] Tauri GUI (same local-first core, no new dependencies on the network)
 - [ ] Deadline reminders (optional, local only)
-- [ ] Export a case summary to plain text / PDF for court days
+- [ ] PDF export
 
 ## License
 
 Apache-2.0. See [LICENSE](LICENSE).
 
-Made by synth with blackclaw
+Part of [Blackshield Company](https://github.com/Blackshield-Company).

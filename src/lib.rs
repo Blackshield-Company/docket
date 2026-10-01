@@ -358,6 +358,67 @@ impl Store {
         }
         Ok(out)
     }
+
+    /// Plain-text case summary for a court day. Overdue is the local date.
+    /// Completed deadlines are never marked overdue.
+    pub fn export_summary(&self, id_or_number: &str) -> Result<String> {
+        let case = self.find_case(id_or_number)?;
+        let today = Local::now().date_naive();
+        let deadlines = self.deadlines_for_case(case.id)?;
+        let docs = self.documents_for_case(case.id)?;
+
+        let mut out = String::new();
+        out.push_str(&format!("DOCKET — {}\n", case.case_number));
+        out.push_str(&format!("Defendant: {}\n", case.defendant_name));
+        out.push_str(&format!("Charges: {}\n", case.charges.trim()));
+        out.push_str(&format!(
+            "Court: {}\n",
+            case.court.as_deref().unwrap_or("(none)")
+        ));
+        out.push_str(&format!("Status: {}\n", case.status));
+        out.push_str(&format!("Opened: {}\n", case.opened_date));
+
+        out.push_str("\nDeadlines\n");
+        if deadlines.is_empty() {
+            out.push_str("  (none)\n");
+        }
+        for d in &deadlines {
+            let due = NaiveDate::parse_from_str(&d.due_date, "%Y-%m-%d")
+                .with_context(|| format!("bad due_date '{}'", d.due_date))?;
+            let flag = if d.completed {
+                "DONE"
+            } else if due < today {
+                "OVERDUE"
+            } else {
+                ""
+            };
+            let mark = if d.completed { "[x]" } else { "[ ]" };
+            out.push_str(&format!(
+                "  {mark} #{:<4} {:<18} due {} {flag}\n",
+                d.id, d.kind, d.due_date
+            ));
+            if let Some(notes) = &d.notes {
+                out.push_str(&format!("       {notes}\n"));
+            }
+        }
+
+        out.push_str("\nDocuments\n");
+        if docs.is_empty() {
+            out.push_str("  (none)\n");
+        }
+        for d in &docs {
+            out.push_str(&format!(
+                "  #{:<4} {:<15} {} (added {})\n",
+                d.id, d.kind, d.path, d.added_date
+            ));
+        }
+
+        if let Some(notes) = &case.notes {
+            out.push_str(&format!("\nNotes\n  {notes}\n"));
+        }
+
+        Ok(out)
+    }
 }
 
 fn row_to_case(row: &rusqlite::Row) -> rusqlite::Result<Case> {
@@ -566,5 +627,46 @@ mod tests {
         let docs = store.documents_for_case(case.id).unwrap();
         assert_eq!(docs.len(), 1);
         assert_eq!(docs[0].path, "/files/police-report.pdf");
+    }
+
+    #[test]
+    fn export_summary_marks_overdue_and_done() {
+        let store = Store::open_memory().unwrap();
+        let case = store
+            .add_case(
+                "CR-2026-900",
+                None,
+                Some("Client J.D."),
+                "possession w/ intent",
+                Some("Superior Court, Dept. 4"),
+                Some("bring the file"),
+            )
+            .unwrap();
+        let yesterday = Local::now().date_naive() - Duration::days(1);
+        let tomorrow = Local::now().date_naive() + Duration::days(1);
+        let overdue = store
+            .add_deadline(case.id, "arraignment", yesterday, None)
+            .unwrap();
+        let upcoming = store
+            .add_deadline(case.id, "trial", tomorrow, None)
+            .unwrap();
+        store.complete_deadline(upcoming.id).unwrap();
+        store
+            .add_document(case.id, "discovery", "./police-report.pdf", None)
+            .unwrap();
+
+        let text = store.export_summary("CR-2026-900").unwrap();
+        assert!(text.contains("DOCKET — CR-2026-900"));
+        assert!(text.contains("Defendant: Client J.D."));
+        assert!(text.contains("Real Name") == false);
+        assert!(text.contains(&format!("#{} ", overdue.id)));
+        assert!(text.contains("OVERDUE"));
+        assert!(text.contains("DONE"));
+        assert!(text.contains("./police-report.pdf"));
+        assert!(text.contains("bring the file"));
+        // A completed future deadline must not also be flagged overdue.
+        let done_line = text.lines().find(|line| line.contains("trial")).unwrap();
+        assert!(done_line.contains("DONE"));
+        assert!(!done_line.contains("OVERDUE"));
     }
 }

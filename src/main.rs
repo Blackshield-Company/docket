@@ -47,6 +47,14 @@ enum Command {
         /// Case ID or case number
         id_or_number: String,
     },
+    /// Write a plain-text case summary for court
+    Export {
+        /// Case ID or case number
+        id_or_number: String,
+        /// Write to this file instead of stdout
+        #[arg(long)]
+        out: Option<std::path::PathBuf>,
+    },
 }
 
 #[derive(Subcommand)]
@@ -280,6 +288,16 @@ fn main() -> Result<()> {
         Command::Close { id_or_number } => {
             let case = store.close_case(&id_or_number)?;
             println!("Closed case #{} ({})", case.id, case.case_number);
+        }
+        Command::Export { id_or_number, out } => {
+            let summary = store.export_summary(&id_or_number)?;
+            if let Some(path) = out {
+                std::fs::write(&path, &summary)
+                    .with_context(|| format!("could not write {}", path.display()))?;
+                println!("Wrote {}", path.display());
+            } else {
+                print!("{summary}");
+            }
         }
     }
     Ok(())
