@@ -1,2 +1,4 @@
 /target
 docket.db
+src-tauri/target
+src-tauri/gen

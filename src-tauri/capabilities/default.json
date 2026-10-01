@@ -1,0 +1,6 @@
+{
+  "identifier": "default",
+  "description": "Local docket window. No network, no shell.",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}

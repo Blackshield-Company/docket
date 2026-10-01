@@ -68,6 +68,13 @@ docket remind --days 3        # plus the next 3 days
 docket remind --notify        # desktop popup if notify-send exists; still no network
 ```
 
+Desktop window, same core, no network. The window keeps its own database under the app data folder and shows that path. It does not read the CLI's `docket.db` in the current directory.
+
+```sh
+cargo build --manifest-path src-tauri/Cargo.toml
+./src-tauri/target/debug/docket-desktop
+```
+
 ## Pseudonyms and screen sharing
 
 Public defenders share their screens constantly — in court, on calls, in
@@ -99,7 +106,8 @@ machine it lives on. Consider full-disk encryption.
 - [x] Export a case summary to plain text for court days
 - [x] Deadline reminders (optional, local only — `docket remind`)
 - [x] PDF export (`docket export --pdf`)
-- [ ] Tauri GUI (same local-first core, no new dependencies on the network)
+- [x] Tauri GUI (`docket-desktop`, same local store, no network)
+- [ ] Windows and Mac release builds (workflow is in, run it when the suite is finished)
 
 ## License
 

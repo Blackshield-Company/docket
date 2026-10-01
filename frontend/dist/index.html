@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="dark" />
+  <title>Docket</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>Docket</h1>
+    <p id="db-path" class="path"></p>
+  </header>
+  <p id="error" class="error" hidden></p>
+  <main>
+    <section class="board">
+      <div class="row">
+        <input id="search" type="search" placeholder="Search cases" spellcheck="false" />
+        <button id="search-btn" class="btn" type="button">Search</button>
+        <button id="clear-search" class="btn" type="button">All</button>
+      </div>
+      <ul id="cases" class="cases"></ul>
+      <h2>Due</h2>
+      <ul id="reminders" class="reminders"></ul>
+      <form id="new-case">
+        <h2>New case</h2>
+        <p class="hint">Only the pseudonym is stored. The real name never hits disk.</p>
+        <input name="case_number" required placeholder="Case number" spellcheck="false" />
+        <input name="pseudonym" required placeholder="Pseudonym" spellcheck="false" />
+        <input name="charges" required placeholder="Charges" spellcheck="false" />
+        <input name="court" placeholder="Court" spellcheck="false" />
+        <textarea name="notes" placeholder="Notes" rows="3"></textarea>
+        <button class="btn" type="submit">Open case</button>
+      </form>
+    </section>
+    <section id="detail" class="detail">
+      <p class="empty">Select a case.</p>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
