@@ -55,6 +55,15 @@ enum Command {
         #[arg(long)]
         out: Option<std::path::PathBuf>,
     },
+    /// Local reminder: overdue and due soon. Prints nothing if the board is clear.
+    Remind {
+        /// Days ahead of today to include. 0 = overdue and due today.
+        #[arg(long, default_value_t = 0)]
+        days: i64,
+        /// Also raise a desktop notification if notify-send is installed. Never uses the network.
+        #[arg(long)]
+        notify: bool,
+    },
 }
 
 #[derive(Subcommand)]
@@ -297,6 +306,21 @@ fn main() -> Result<()> {
                 println!("Wrote {}", path.display());
             } else {
                 print!("{summary}");
+            }
+        }
+        Command::Remind { days, notify } => {
+            let lines = store.reminder_lines(days)?;
+            if lines.is_empty() {
+                return Ok(());
+            }
+            for line in &lines {
+                println!("{line}");
+            }
+            if notify {
+                let body = lines.join("\n");
+                let _ = std::process::Command::new("notify-send")
+                    .args(["Docket", &body])
+                    .status();
             }
         }
     }

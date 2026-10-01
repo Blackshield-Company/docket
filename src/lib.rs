@@ -419,6 +419,26 @@ impl Store {
 
         Ok(out)
     }
+
+    /// Overdue deadlines plus anything due within `days` of today.
+    /// `days = 0` is overdue and due today. Completed deadlines are omitted.
+    /// Empty means stay quiet — this is the cron/reminder path.
+    pub fn reminder_lines(&self, days: i64) -> Result<Vec<String>> {
+        let upcoming = self.upcoming_deadlines(days)?;
+        Ok(upcoming
+            .iter()
+            .map(|item| {
+                let flag = if item.overdue { "OVERDUE" } else { "DUE" };
+                format!(
+                    "{flag}  {}  {}  {}  {}",
+                    item.deadline.due_date,
+                    item.deadline.kind,
+                    item.case_number,
+                    item.defendant_name
+                )
+            })
+            .collect())
+    }
 }
 
 fn row_to_case(row: &rusqlite::Row) -> rusqlite::Result<Case> {
@@ -668,5 +688,45 @@ mod tests {
         let done_line = text.lines().find(|line| line.contains("trial")).unwrap();
         assert!(done_line.contains("DONE"));
         assert!(!done_line.contains("OVERDUE"));
+    }
+
+    #[test]
+    fn reminder_is_quiet_unless_due() {
+        let store = Store::open_memory().unwrap();
+        let case = store
+            .add_case(
+                "CR-2026-910",
+                None,
+                Some("Client J.D."),
+                "petty theft",
+                None,
+                None,
+            )
+            .unwrap();
+        store
+            .add_deadline(case.id, "trial", today() + Duration::days(20), None)
+            .unwrap();
+        assert!(store.reminder_lines(0).unwrap().is_empty());
+
+        store
+            .add_deadline(case.id, "arraignment", today() - Duration::days(2), None)
+            .unwrap();
+        store
+            .add_deadline(case.id, "hearing", today(), None)
+            .unwrap();
+        let done = store
+            .add_deadline(case.id, "filing", today() - Duration::days(1), None)
+            .unwrap();
+        store.complete_deadline(done.id).unwrap();
+
+        let lines = store.reminder_lines(0).unwrap();
+        assert_eq!(lines.len(), 2);
+        assert!(lines[0].starts_with("OVERDUE"));
+        assert!(lines[0].contains("arraignment"));
+        assert!(lines[0].contains("Client J.D."));
+        assert!(lines[1].starts_with("DUE"));
+        assert!(lines[1].contains("hearing"));
+        assert!(!lines.iter().any(|line| line.contains("filing")));
+        assert!(!lines.iter().any(|line| line.contains("trial")));
     }
 }
