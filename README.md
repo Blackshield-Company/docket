@@ -1,3 +1,5 @@
+![docket](.github/preview.png)
+
 # docket
 
 A local-first case file organizer for public defenders.
